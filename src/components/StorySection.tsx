@@ -107,10 +107,6 @@ export const StorySection: React.FC = () => {
               ))}
             </div>
           </div>
-
-          <p className="text-center text-xs text-neutral-500 mt-2 font-medium">
-            ✨ Carrossel contínuo automático • Clique na imagem para ampliar
-          </p>
         </div>
       </div>
 

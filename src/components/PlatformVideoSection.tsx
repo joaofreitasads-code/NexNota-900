@@ -5,25 +5,19 @@ export const PlatformVideoSection: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
+  const [hasStartedByUser, setHasStartedByUser] = useState(false);
   const [isNearViewport, setIsNearViewport] = useState(false);
-  const userPausedManually = useRef(false);
 
-  // IntersectionObserver to only load & play video when visible, saving mobile data & CPU
+  // IntersectionObserver to preload video when approaching viewport
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             setIsNearViewport(true);
-            if (videoRef.current && !userPausedManually.current) {
-              const playPromise = videoRef.current.play();
-              if (playPromise !== undefined) {
-                playPromise.then(() => setIsPlaying(true)).catch(() => {});
-              }
-            }
           } else {
-            // Pause video when out of viewport to preserve weak phone performance
+            // Pause video when out of viewport
             if (videoRef.current && !videoRef.current.paused) {
               videoRef.current.pause();
               setIsPlaying(false);
@@ -41,17 +35,42 @@ export const PlatformVideoSection: React.FC = () => {
     return () => observer.disconnect();
   }, []);
 
+  // When user clicks the YouTube style play button, play directly with sound
+  const handlePlayWithSound = () => {
+    if (!videoRef.current) return;
+    videoRef.current.muted = false;
+    videoRef.current.volume = 1;
+    setIsMuted(false);
+    setHasStartedByUser(true);
+    const playPromise = videoRef.current.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          setIsPlaying(true);
+        })
+        .catch(() => {
+          // If browser strictly blocks unmuted play on first user tap, fallback to muted then unmute
+          if (videoRef.current) {
+            videoRef.current.muted = true;
+            setIsMuted(true);
+            videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+          }
+        });
+    }
+  };
+
+  const handlePause = () => {
+    if (!videoRef.current) return;
+    videoRef.current.pause();
+    setIsPlaying(false);
+  };
+
   const togglePlay = () => {
     if (!videoRef.current) return;
-    if (isPlaying) {
-      videoRef.current.pause();
-      setIsPlaying(false);
-      userPausedManually.current = true;
+    if (videoRef.current.paused) {
+      handlePlayWithSound();
     } else {
-      videoRef.current.play().then(() => {
-        setIsPlaying(true);
-        userPausedManually.current = false;
-      }).catch(() => {});
+      handlePause();
     }
   };
 
@@ -125,38 +144,74 @@ export const PlatformVideoSection: React.FC = () => {
               <video
                 ref={videoRef}
                 src={isNearViewport ? "https://i.imgur.com/EjNTaB5.mp4" : undefined}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover cursor-pointer"
                 loop
                 muted={isMuted}
                 playsInline
                 preload="metadata"
-                controls
+                onClick={togglePlay}
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
               />
 
-              {/* Fast floating control buttons */}
-              <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 flex items-center gap-2 z-20 pointer-events-auto opacity-90 group-hover:opacity-100 transition-opacity">
-                <button
-                  type="button"
-                  onClick={toggleMute}
-                  className="p-2 sm:p-2.5 rounded-full bg-neutral-900/80 hover:bg-neutral-800 text-white backdrop-blur-sm border border-white/10 shadow-lg cursor-pointer transition-transform hover:scale-105"
-                  title={isMuted ? 'Ativar som' : 'Desativar som'}
-                  aria-label={isMuted ? 'Ativar som' : 'Desativar som'}
+              {/* YouTube Style Play Button Overlay (Visible whenever paused or before starting) */}
+              {!isPlaying && (
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePlayWithSound();
+                  }}
+                  className="absolute inset-0 bg-neutral-950/40 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 cursor-pointer z-30 transition-all duration-300 hover:bg-neutral-950/20 group/yt"
+                  role="button"
+                  aria-label="Assistir vídeo com som"
                 >
-                  {isMuted ? <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-neutral-300" /> : <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />}
-                </button>
+                  {/* YouTube iconic badge button */}
+                  <div className="relative w-16 h-11 sm:w-20 sm:h-14 bg-red-600 group-hover/yt:bg-red-500 rounded-2xl flex items-center justify-center shadow-2xl transition-all duration-200 group-hover/yt:scale-110 drop-shadow-[0_10px_25px_rgba(220,38,38,0.5)]">
+                    <svg
+                      className="w-7 h-7 sm:w-8 sm:h-8 text-white fill-current ml-1"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                  
+                  <span className="px-3.5 py-1.5 rounded-full bg-neutral-900/90 border border-white/10 text-white text-xs sm:text-sm font-bold flex items-center gap-2 shadow-lg backdrop-blur-sm group-hover/yt:border-red-500/50">
+                    <Volume2 className="w-4 h-4 text-emerald-400 animate-pulse" />
+                    {hasStartedByUser ? 'Clique para continuar assistindo' : 'Clique para assistir com som'}
+                  </span>
+                </div>
+              )}
 
-                <button
-                  type="button"
-                  onClick={togglePlay}
-                  className="p-2 sm:p-2.5 rounded-full bg-neutral-900/80 hover:bg-neutral-800 text-white backdrop-blur-sm border border-white/10 shadow-lg cursor-pointer transition-transform hover:scale-105"
-                  title={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
-                  aria-label={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
-                >
-                  {isPlaying ? <Pause className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-neutral-300" /> : <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />}
-                </button>
-              </div>
+              {/* Fast floating control buttons */}
+              {hasStartedByUser && isPlaying && (
+                <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 flex items-center gap-2 z-20 pointer-events-auto opacity-90 group-hover:opacity-100 transition-opacity">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleMute();
+                    }}
+                    className="p-2 sm:p-2.5 rounded-full bg-neutral-900/80 hover:bg-neutral-800 text-white backdrop-blur-sm border border-white/10 shadow-lg cursor-pointer transition-transform hover:scale-105"
+                    title={isMuted ? 'Ativar som' : 'Desativar som'}
+                    aria-label={isMuted ? 'Ativar som' : 'Desativar som'}
+                  >
+                    {isMuted ? <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-neutral-300" /> : <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePause();
+                    }}
+                    className="p-2 sm:p-2.5 rounded-full bg-neutral-900/80 hover:bg-neutral-800 text-white backdrop-blur-sm border border-white/10 shadow-lg cursor-pointer transition-transform hover:scale-105"
+                    title="Pausar vídeo"
+                    aria-label="Pausar vídeo"
+                  >
+                    <Pause className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-neutral-300" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

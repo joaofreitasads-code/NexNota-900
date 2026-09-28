@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { BookOpen } from 'lucide-react';
 
 interface ImageWithFallbackProps extends React.ImgHTMLAttributes<HTMLImageElement> {
@@ -6,6 +6,19 @@ interface ImageWithFallbackProps extends React.ImgHTMLAttributes<HTMLImageElemen
   fallbackGradient?: string;
   priority?: boolean;
 }
+
+// Global cache tracking loaded URLs so they render instantly with 0 delay across re-renders
+const LOADED_IMAGE_CACHE = new Set<string>();
+
+export const prefetchImage = (url: string) => {
+  if (!url || typeof window === 'undefined' || LOADED_IMAGE_CACHE.has(url)) return;
+  const img = new Image();
+  img.decoding = 'async';
+  img.src = url;
+  img.onload = () => {
+    LOADED_IMAGE_CACHE.add(url);
+  };
+};
 
 export const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
   src,
@@ -18,8 +31,19 @@ export const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
   ...props
 }) => {
   const [hasError, setHasError] = useState(false);
-  // If image was already cached or is priority, don't show loading spinner
-  const [isLoading, setIsLoading] = useState(!priority);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  // Check if image was previously loaded or is already complete in DOM cache
+  const isAlreadyCached = src ? LOADED_IMAGE_CACHE.has(src) : false;
+  const [isLoading, setIsLoading] = useState(!isAlreadyCached && !priority);
+
+  useEffect(() => {
+    if (!src) return;
+    if (imgRef.current && (imgRef.current.complete || LOADED_IMAGE_CACHE.has(src))) {
+      LOADED_IMAGE_CACHE.add(src);
+      setIsLoading(false);
+    }
+  }, [src]);
 
   if (hasError || !src) {
     return (
@@ -37,21 +61,20 @@ export const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
 
   return (
     <div className="relative w-full h-full flex items-center justify-center">
-      {isLoading && (
-        <div className="absolute inset-0 bg-neutral-100/60 rounded-lg flex items-center justify-center pointer-events-none transition-opacity duration-150">
-          <div className="w-5 h-5 rounded-full border-2 border-emerald-500/30 border-t-emerald-500 animate-spin" />
-        </div>
+      {isLoading && !isAlreadyCached && (
+        <div className="absolute inset-0 bg-neutral-100/30 rounded-xl pointer-events-none" />
       )}
       <img
+        ref={imgRef}
         src={src}
         alt={alt || ''}
-        className={`${className} transition-opacity duration-150 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
+        className={className}
         referrerPolicy="no-referrer"
         loading={priority ? 'eager' : (loading || 'lazy')}
         decoding="async"
-        fetchPriority={priority ? 'high' : 'low'}
-        onLoad={(e) => {
-          // If already completed in browser cache, instant display
+        fetchPriority={priority ? 'high' : 'auto'}
+        onLoad={() => {
+          if (src) LOADED_IMAGE_CACHE.add(src);
           setIsLoading(false);
         }}
         onError={() => {

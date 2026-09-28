@@ -3,14 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { ArrowDown } from 'lucide-react';
 import { SUBJECTS } from './data/courseData';
-import { ImageWithFallback } from './components/ImageWithFallback';
+import { ImageWithFallback, prefetchImage } from './components/ImageWithFallback';
 import { SubjectCard } from './components/SubjectCard';
 import { BooksInfiniteCarousel } from './components/BooksInfiniteCarousel';
 import { SamplesCarousel } from './components/SamplesCarousel';
-import { FloatingCta } from './components/FloatingCta';
 
 // Lazy load below-the-fold components to make initial bundle tiny and initial mobile render instant
 const PlatformVideoSection = lazy(() => import('./components/PlatformVideoSection').then(m => ({ default: m.PlatformVideoSection })));
@@ -24,6 +23,24 @@ const Footer = lazy(() => import('./components/Footer').then(m => ({ default: m.
 
 export default function App() {
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'natureza' | 'humanas' | 'linguagens' | 'matematica'>('all');
+
+  // Intelligent idle prefetch for books & key cards without blocking initial paint or CPU
+  useEffect(() => {
+    const prefetchAssets = () => {
+      // Warm up the browser cache with first visible subjects in carousel
+      SUBJECTS.slice(0, 6).forEach((sub) => {
+        prefetchImage(sub.image);
+      });
+      // Preload VIP offer image in advance
+      prefetchImage('https://i.imgur.com/jCYWXTu.png');
+    };
+
+    if ('requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(prefetchAssets, { timeout: 1500 });
+    } else {
+      setTimeout(prefetchAssets, 1000);
+    }
+  }, []);
 
   const filterMap: Record<string, string[]> = {
     natureza: ['biologia', 'fisica', 'quimica'],
@@ -193,9 +210,6 @@ export default function App() {
         {/* FOOTER */}
         <Footer />
       </Suspense>
-
-      {/* Floating CTA bar on mobile/desktop */}
-      <FloatingCta />
 
     </div>
   );
