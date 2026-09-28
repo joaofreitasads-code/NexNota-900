@@ -143,12 +143,13 @@ export const PlatformVideoSection: React.FC = () => {
             <div className="relative aspect-video bg-neutral-950 flex items-center justify-center group overflow-hidden">
               <video
                 ref={videoRef}
-                src={isNearViewport ? "https://i.imgur.com/EjNTaB5.mp4" : undefined}
+                src="https://i.imgur.com/EjNTaB5.mp4"
+                poster="https://i.imgur.com/jCYWXTu.png"
                 className="w-full h-full object-cover cursor-pointer"
                 loop
                 muted={isMuted}
                 playsInline
-                preload="metadata"
+                preload="auto"
                 onClick={togglePlay}
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}

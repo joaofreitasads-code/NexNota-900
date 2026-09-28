@@ -6,7 +6,7 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { ArrowDown } from 'lucide-react';
 import { SUBJECTS } from './data/courseData';
-import { ImageWithFallback, prefetchImage } from './components/ImageWithFallback';
+import { ImageWithFallback } from './components/ImageWithFallback';
 import { SubjectCard } from './components/SubjectCard';
 import { BooksInfiniteCarousel } from './components/BooksInfiniteCarousel';
 import { SamplesCarousel } from './components/SamplesCarousel';
@@ -24,22 +24,22 @@ const Footer = lazy(() => import('./components/Footer').then(m => ({ default: m.
 export default function App() {
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'natureza' | 'humanas' | 'linguagens' | 'matematica'>('all');
 
-  // Intelligent idle prefetch for books & key cards without blocking initial paint or CPU
+  // Pre-instantiate priority image objects immediately for instant mobile display
   useEffect(() => {
-    const prefetchAssets = () => {
-      // Warm up the browser cache with first visible subjects in carousel
-      SUBJECTS.slice(0, 6).forEach((sub) => {
-        prefetchImage(sub.image);
-      });
-      // Preload VIP offer image in advance
-      prefetchImage('https://i.imgur.com/jCYWXTu.png');
-    };
-
-    if ('requestIdleCallback' in window) {
-      (window as any).requestIdleCallback(prefetchAssets, { timeout: 1500 });
-    } else {
-      setTimeout(prefetchAssets, 1000);
-    }
+    const urlsToPreload = [
+      'https://i.imgur.com/fFoVM3v.png',
+      'https://i.imgur.com/1xXhTJw.png',
+      'https://i.imgur.com/4HpzCBB.png',
+      'https://i.imgur.com/XTFuRuJ.png',
+      'https://i.imgur.com/uDony5A.png',
+      'https://i.imgur.com/jCYWXTu.png',
+      'https://i.imgur.com/vlJfDbW.png'
+    ];
+    urlsToPreload.forEach((url) => {
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = url;
+    });
   }, []);
 
   const filterMap: Record<string, string[]> = {
