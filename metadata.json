@@ -1,0 +1,6 @@
+{
+  "name": "Combo ENEM - Ana Beatriz - MEDVETAB",
+  "description": "Estude com um material completo para o ENEM 2026, incluindo redação, simulados e revisões pensadas para quem quer chegar mais perto dos 900+.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

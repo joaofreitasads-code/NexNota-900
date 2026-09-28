@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', 'Inter', sans-serif;
+  }
+
+  /* Optimize images for smooth rendering without jank */
+  img, video {
+    content-visibility: auto;
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    transform: scale3d(1, 1, 1);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  50% {
+    transform: scale3d(1.02, 1.02, 1);
+    box-shadow: 0 0 25px 6px rgba(34, 197, 94, 0.45);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2.4s infinite ease-in-out;
+  will-change: transform, box-shadow;
+}
+
+/* 3D Hardware Accelerated Marquee (Zero CPU paint during scrolling) */
+@keyframes marqueeLeft {
+  0% { transform: translate3d(0%, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+
+@keyframes marqueeRight {
+  0% { transform: translate3d(-50%, 0, 0); }
+  100% { transform: translate3d(0%, 0, 0); }
+}
+
+.animate-marquee-left {
+  display: flex;
+  width: max-content;
+  animation: marqueeLeft 35s linear infinite;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+}
+
+.animate-marquee-right {
+  display: flex;
+  width: max-content;
+  animation: marqueeRight 35s linear infinite;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+}
+
+.animate-marquee-medium {
+  display: flex;
+  width: max-content;
+  animation: marqueeLeft 28s linear infinite !important;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+}
+
+.no-pause-marquee,
+.no-pause-marquee:hover,
+.no-pause-marquee:active,
+.no-pause-marquee:focus {
+  animation-play-state: running !important;
+}
+
+.marquee-container:hover .animate-marquee-left,
+.marquee-container:hover .animate-marquee-right {
+  animation-play-state: paused;
+}
+
+/* Mobile low-power / weak-device optimization */
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee-left,
+  .animate-marquee-right,
+  .animate-marquee-medium,
+  .animate-pulse-glow {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
