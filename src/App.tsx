@@ -3,21 +3,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { ArrowDown } from 'lucide-react';
 import { SUBJECTS } from './data/courseData';
 import { ImageWithFallback } from './components/ImageWithFallback';
 import { SubjectCard } from './components/SubjectCard';
 import { BooksInfiniteCarousel } from './components/BooksInfiniteCarousel';
 import { SamplesCarousel } from './components/SamplesCarousel';
-import { PlatformVideoSection } from './components/PlatformVideoSection';
-import { BenefitsSection } from './components/BenefitsSection';
-import { StorySection } from './components/StorySection';
-import { BonusSection } from './components/BonusSection';
-import { OfferBox } from './components/OfferBox';
-import { GuaranteeSection } from './components/GuaranteeSection';
-import { FaqSection } from './components/FaqSection';
-import { Footer } from './components/Footer';
+import { FloatingCta } from './components/FloatingCta';
+
+// Lazy load below-the-fold components to make initial bundle tiny and initial mobile render instant
+const PlatformVideoSection = lazy(() => import('./components/PlatformVideoSection').then(m => ({ default: m.PlatformVideoSection })));
+const BenefitsSection = lazy(() => import('./components/BenefitsSection').then(m => ({ default: m.BenefitsSection })));
+const StorySection = lazy(() => import('./components/StorySection').then(m => ({ default: m.StorySection })));
+const BonusSection = lazy(() => import('./components/BonusSection').then(m => ({ default: m.BonusSection })));
+const OfferBox = lazy(() => import('./components/OfferBox').then(m => ({ default: m.OfferBox })));
+const GuaranteeSection = lazy(() => import('./components/GuaranteeSection').then(m => ({ default: m.GuaranteeSection })));
+const FaqSection = lazy(() => import('./components/FaqSection').then(m => ({ default: m.FaqSection })));
+const Footer = lazy(() => import('./components/Footer').then(m => ({ default: m.Footer })));
 
 export default function App() {
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'natureza' | 'humanas' | 'linguagens' | 'matematica'>('all');
@@ -164,29 +167,35 @@ export default function App() {
       {/* SAMPLE PAGES CAROUSEL */}
       <SamplesCarousel />
 
-      {/* PLATFORM & PRACTICAL TRAINING VIDEO */}
-      <PlatformVideoSection />
+      {/* BELOW THE FOLD SECTIONS (LAZY LOADED FOR INSTANT INITIAL PAINT) */}
+      <Suspense fallback={<div className="py-12 flex justify-center"><div className="w-8 h-8 rounded-full border-2 border-emerald-500/30 border-t-emerald-600 animate-spin" /></div>}>
+        {/* PLATFORM & PRACTICAL TRAINING VIDEO */}
+        <PlatformVideoSection />
 
-      {/* BENEFITS / VALUE PROPOSITION */}
-      <BenefitsSection />
+        {/* BENEFITS / VALUE PROPOSITION */}
+        <BenefitsSection />
 
-      {/* STORY & METHOD SECTION */}
-      <StorySection />
+        {/* STORY & METHOD SECTION */}
+        <StorySection />
 
-      {/* EXCLUSIVE BONUSES SECTION */}
-      <BonusSection onScrollToOffer={scrollToOffer} />
+        {/* EXCLUSIVE BONUSES SECTION */}
+        <BonusSection onScrollToOffer={scrollToOffer} />
 
-      {/* MAIN OFFER & PRICING CARD */}
-      <OfferBox />
+        {/* MAIN OFFER & PRICING CARD */}
+        <OfferBox />
 
-      {/* GUARANTEE SECTION */}
-      <GuaranteeSection />
+        {/* GUARANTEE SECTION */}
+        <GuaranteeSection />
 
-      {/* FAQS */}
-      <FaqSection />
+        {/* FAQS */}
+        <FaqSection />
 
-      {/* FOOTER */}
-      <Footer />
+        {/* FOOTER */}
+        <Footer />
+      </Suspense>
+
+      {/* Floating CTA bar on mobile/desktop */}
+      <FloatingCta />
 
     </div>
   );

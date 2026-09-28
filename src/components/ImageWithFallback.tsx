@@ -18,6 +18,7 @@ export const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
   ...props
 }) => {
   const [hasError, setHasError] = useState(false);
+  // If image was already cached or is priority, don't show loading spinner
   const [isLoading, setIsLoading] = useState(!priority);
 
   if (hasError || !src) {
@@ -37,19 +38,22 @@ export const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
   return (
     <div className="relative w-full h-full flex items-center justify-center">
       {isLoading && (
-        <div className="absolute inset-0 bg-neutral-100/80 rounded-lg flex items-center justify-center pointer-events-none transition-opacity duration-200">
-          <div className="w-6 h-6 rounded-full border-2 border-emerald-500/30 border-t-emerald-500 animate-spin" />
+        <div className="absolute inset-0 bg-neutral-100/60 rounded-lg flex items-center justify-center pointer-events-none transition-opacity duration-150">
+          <div className="w-5 h-5 rounded-full border-2 border-emerald-500/30 border-t-emerald-500 animate-spin" />
         </div>
       )}
       <img
         src={src}
         alt={alt || ''}
-        className={`${className} transition-opacity duration-200 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
+        className={`${className} transition-opacity duration-150 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
         referrerPolicy="no-referrer"
         loading={priority ? 'eager' : (loading || 'lazy')}
         decoding="async"
-        fetchPriority={priority ? 'high' : 'auto'}
-        onLoad={() => setIsLoading(false)}
+        fetchPriority={priority ? 'high' : 'low'}
+        onLoad={(e) => {
+          // If already completed in browser cache, instant display
+          setIsLoading(false);
+        }}
         onError={() => {
           setIsLoading(false);
           setHasError(true);
